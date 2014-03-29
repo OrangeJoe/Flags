@@ -1,7 +1,7 @@
 PLUGIN.Title = "Flags"
 PLUGIN.Description = "Easily handle what users and groups can and can not do."
-PLUGIN.Author = "eDeloa"
-PLUGIN.Version = "1.2.2"
+PLUGIN.Author = "eDeloa and changes by BuSheeZy"
+PLUGIN.Version = "1.2.3"
 
 print(PLUGIN.Title .. " (" .. PLUGIN.Version .. ") plugin loaded")
 
@@ -244,7 +244,7 @@ function PLUGIN:AddFlagsChatCommand(plugin, name, flagsrequired, callback)
   
   -- Define a proxy callback that checks for flags
   local function FlagsChatCallback(self, netuser, cmd, args)
-    local steamID = flags_plugin:CommunityIDToSteamIDFix(tonumber(rust.GetUserID(netuser)))
+    local steamID = rust.CommunityIDToSteamID(tonumber(rust.GetUserID(netuser)))
     if (not (flags_plugin:HasFlags(steamID, flagsrequired) or flags_plugin:CanRCON(netuser))) then
       rust.Notice(netuser, "You are not allowed to use this command!")
       return true
@@ -273,12 +273,13 @@ function PLUGIN:AddFlagsConsoleCommand(plugin, pluginname, commandname, flagsreq
   local function FlagsConsoleCallback(self, arg)
     local netuser = arg.argUser
     if (not netuser) then
-      arg:ReplyWith("Invalid user.")
+      print("[SERVER] ran console command '" .. pluginname .. "." .. commandname .. "'")
+      callback(self, arg)
       return true
     end
-
+    
     -- Define a proxy callback that checks for flags
-    local steamID = flags_plugin:CommunityIDToSteamIDFix(tonumber(rust.GetUserID(netuser)))
+    local steamID = rust.CommunityIDToSteamID(tonumber(rust.GetUserID(netuser)))
     if (not (flags_plugin:HasFlags(steamID, flagsrequired) or flags_plugin:CanRCON(netuser))) then
       arg:ReplyWith("You are not allowed to use this command!")
       return true
@@ -732,11 +733,6 @@ function PLUGIN:CanRCON(netuser)
   return netuser:CanAdmin()
 end
 
--- Borrowed from manateebans
-function PLUGIN:CommunityIDToSteamIDFix(userID)
-  return "STEAM_0:" .. math.ceil((userID/2) % 1) .. ":" .. math.floor(userID/2)
-end
-
 -- Borrowed from http://lua-users.org/wiki/SplitJoin
 local function split(str, pat)
   local t = {}  -- NOTE: use {n = 0} in Lua-5.0
@@ -773,7 +769,7 @@ end
 
 function PLUGIN:ConvertUserArgToSteamID(input)
   if (type(input) == "userdata") then
-    local steamID = self:CommunityIDToSteamIDFix(tonumber(rust.GetUserID(input)))
+    local steamID = rust.CommunityIDToSteamID(tonumber(rust.GetUserID(input)))
     return SteamIDToSteam64(steamID)
   elseif (input:match("(STEAM_[0-9]:[0-9]:[0-9]+)")) then
     return SteamIDToSteam64(input)
@@ -782,7 +778,7 @@ function PLUGIN:ConvertUserArgToSteamID(input)
   elseif (tonumber(input) > 76561197960265728) then
     return input
   else
-    local steamID = self:CommunityIDToSteamIDFix(tonumber(input))
+    local steamID = rust.CommunityIDToSteamID(tonumber(input))
     return SteamIDToSteam64(steamID)
   end
 end
